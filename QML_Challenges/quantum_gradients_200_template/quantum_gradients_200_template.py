@@ -71,7 +71,13 @@ def gradient_200(weights, dev):
         print(params.shape)
         for i in range(5):
             for j in range(5):
-                hessian[i][j] = parameter_shift_term(qnode, params, i)*parameter_shift_term(qnode, params, j)
+                shifted_i = parameter_shift_term(qnode, params, i)
+                params1 = params
+                params1[i] = shifted_i
+                # print(params1)
+                shifted_j = parameter_shift_term(qnode, params1, j)
+                # print(shifted_i,".i.j.",shifted_j)
+                hessian[i][j] = shifted_i*shifted_j
         return hessian
 
 
