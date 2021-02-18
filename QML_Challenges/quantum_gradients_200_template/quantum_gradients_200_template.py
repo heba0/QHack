@@ -2,8 +2,8 @@
 
 import sys
 import pennylane as qml
-import numpy as np
-
+# import numpy as np
+from pennylane import numpy as np
 
 def gradient_200(weights, dev):
     r"""This function must compute the gradient *and* the Hessian of the variational
@@ -23,7 +23,7 @@ def gradient_200(weights, dev):
             * hessian is a real NumPy array of size (5, 5).
     """
 
-    @qml.qnode(dev, interface=None)
+    @qml.qnode(dev,interface=None)
     def circuit(w):
         for i in range(3):
             qml.RX(w[i], wires=i)
@@ -42,12 +42,47 @@ def gradient_200(weights, dev):
 
         return qml.expval(qml.PauliZ(0) @ qml.PauliZ(2))
 
-    gradient = np.zeros([5], dtype=np.float64)
-    hessian = np.zeros([5, 5], dtype=np.float64)
+    # gradient = np.zeros([5], dtype=np.float64)
+    # hessian = np.zeros([5, 5], dtype=np.float64)
 
     # QHACK #
 
+
+    def parameter_shift_term(qnode, params, i):
+        shifted = params.copy()
+        shifted[i] += np.pi/2
+        forward = qnode(shifted)  # forward evaluation
+
+        shifted[i] -= np.pi
+        backward = qnode(shifted) # backward evaluation
+
+        return 0.5 * (forward - backward)
+
+    def parameter_shift(qnode, params):
+        gradients = np.zeros([len(params)])
+
+        for i in range(len(params)):
+            gradients[i] = parameter_shift_term(qnode, params, i)
+
+        return gradients
+
+    def calc_hessian(qnode, params):
+        hessian = np.zeros([5, 5], dtype=np.float64)
+        print(params.shape)
+        for i in range(5):
+            for j in range(5):
+                hessian[i][j] = parameter_shift_term(qnode, params, i)*parameter_shift_term(qnode, params, j)
+        return hessian
+
+
     # QHACK #
+
+
+    gradient = parameter_shift(circuit, weights)
+    hessian = calc_hessian(circuit, weights)
+    print(weights)
+    print(gradient)
+    print (hessian)
 
     return gradient, hessian, circuit.diff_options["method"]
 
