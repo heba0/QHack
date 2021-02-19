@@ -50,8 +50,18 @@ def find_max_independent_set(graph, params):
         qml.layer(qaoa_layer, N_LAYERS, params[0],params[1])
 
     # print(circuit.draw())
-    cost_function = qml.ExpvalCost(circuit, cost_h, dev)
-    print(cost_function(params))
+
+    @qml.qnode(dev)
+    def probability_circuit(gamma, alpha):
+        circuit([gamma, alpha])
+        return qml.probs(wires=wires)
+
+
+    probs = probability_circuit(params[0], params[1])
+
+    print(probs)
+    # cost_function =  qml.ExpvalCost(circuit, cost_h, dev)
+    # print(cost_function(params))
 
     # QHACK #
 
