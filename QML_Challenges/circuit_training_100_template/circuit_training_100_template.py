@@ -45,8 +45,8 @@ def optimize_circuit(params):
         return 1-circuit(var)
 
 
-    opt = qml.GradientDescentOptimizer(stepsize=0.4)
-    steps = 100
+    opt = qml.GradientDescentOptimizer(stepsize=0.05)
+    steps = 500
 
     for i in range(steps):
     # update the circuit parameters
@@ -55,6 +55,7 @@ def optimize_circuit(params):
         if (i + 1) % 10 == 0:
             print("Cost after step {:5d}: {: .7f}".format(i + 1, cost(params)))
 
+    print(circuit(params))
 
     # QHACK #
 
