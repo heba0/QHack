@@ -71,14 +71,14 @@ def run_vqe(H):
 
     cost_fn = qml.ExpvalCost(circuit, H, dev)
 
-    opt = qml.GradientDescentOptimizer(stepsize=0.4)
+    opt = qml.GradientDescentOptimizer(stepsize=0.2)
 
-    np.random.seed(0)
+    #np.random.seed(0)
 
     print(params)
     
     max_iterations = 200
-    conv_tol = 1e-06
+    conv_tol = 1e-04
 
 
     for n in range(max_iterations):
@@ -92,15 +92,13 @@ def run_vqe(H):
         if conv <= conv_tol:
             break
 
-    print()
-    print('Final convergence parameter = {:.8f} Ha'.format(conv))
-    print('Final value of the ground-state energy = {:.8f} Ha'.format(energy))
-    print('Accuracy with respect to the FCI energy: {:.8f} Ha ({:.8f} kcal/mol)'.format(
-    np.abs(energy - (-1.136189454088)), np.abs(energy - (-1.136189454088))*627.503
-        )
-    )
-    print()
-    print('Final circuit parameters = \n', params)
+   # print('Final convergence parameter = {:.8f} Ha'.format(conv))
+    #print('Final value of the ground-state energy = {:.8f} Ha'.format(energy))
+    #print('Accuracy with respect to the FCI energy: {:.8f} Ha ({:.8f} kcal/mol)'.format(
+    #np.abs(energy - (-1.136189454088)), np.abs(energy - (-1.136189454088))*627.503
+    #    )
+    #)
+    #print('Final circuit parameters = \n', params)
 
     # Create a quantum device, set up a cost funtion and optimizer, and run the VQE.
     # (We recommend ~500 iterations to ensure convergence for this problem,
