@@ -57,7 +57,7 @@ def natural_gradient(params):
         return gradients
 
 
-    def Fubini_elem(qnode, params, i,j):
+    def Fubini_elem(qnode2, params, i,j):
 
         # print(dev._state)
 
@@ -69,17 +69,15 @@ def natural_gradient(params):
         # print("ket1 ....",(ket))
         bra = qnode2(params)
         # print("bra ....",(bra))
-        inner_prod_sq1 =  (bra @ ket.T)**2
-
+        inner_prod_sq1 =  np.abs(bra.T @ np.conjugate(ket))**2
         # print('inner_prod_sq1',inner_prod_sq1)
-
         #elem 2
         shifted = params.copy()
         shifted[i] += np.pi/2
         shifted[j] -= np.pi/2
         ket = qnode2(shifted)  # forward evaluation
         # bra = qnode2(params)
-        inner_prod_sq2 =  (bra @ ket.T)**2
+        inner_prod_sq2 =  np.abs(bra.T @ np.conjugate(ket))**2
 
         #elem 3
         shifted = params.copy()
@@ -87,7 +85,7 @@ def natural_gradient(params):
         shifted[j] += np.pi/2
         ket = qnode2(shifted)  # forward evaluation
         # bra = qnode2(params)
-        inner_prod_sq3 =  (bra @ ket.T)**2
+        inner_prod_sq3 =  np.abs(bra.T @ np.conjugate(ket))**2
 
         #elem 4
         shifted = params.copy()
@@ -95,24 +93,28 @@ def natural_gradient(params):
         shifted[j] -= np.pi/2
         ket = qnode2(shifted) # forward evaluation
         # bra = qnode2(params)
-        inner_prod_sq4 =  (bra @ ket.T)**2
+        inner_prod_sq4 =  np.abs(bra.T @ np.conjugate(ket))**2
 
-        return 1/8 * (-inner_prod_sq1+inner_prod_sq2+inner_prod_sq3-inner_prod_sq4)
+        return (1/8) * (-inner_prod_sq1+inner_prod_sq2+inner_prod_sq3-inner_prod_sq4)
     
     
-    def calc_Fubini(qnode, params):
+    def calc_Fubini(qnode2, params):
         F = np.zeros([len(params), len(params)], dtype=np.float64)
         for i in range(len(params)):
             for j in range(len(params)):
-                # print(Fubini_elem(qnode, params, i,j))
-                F[i][j] = Fubini_elem(qnode, params, i,j).real
+                # print(Fubini_elem(qnode2, params, i,j))
+                F[i][j] = Fubini_elem(qnode2, params, i,j).real
         return F
 
 
     gradient = parameter_shift(qnode,params)
-    F = calc_Fubini(qnode,params)
+    F = calc_Fubini(qnode2,params)
     F_inv = np.linalg.pinv(F)
-    # print(F_inv @ gradient)
+    # print("F....",F)
+
+    met_fn = qml.metric_tensor(qnode2)
+    # weights = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]], requires_grad=True)
+    # print(met_fn(params))
     # QHACK #
 
     return F_inv @ gradient
