@@ -46,8 +46,7 @@ def gradient_200(weights, dev):
     hessian = np.zeros([5, 5], dtype=np.float64)
 
     # QHACK #
-
-
+    extra = circuit(weights)*2
     def parameter_shift_term(qnode, params, i):
         shifted = params.copy()
         shifted[i] += np.pi/2
@@ -59,9 +58,6 @@ def gradient_200(weights, dev):
         shifted[i] -= np.pi/2
         backward = qnode(shifted) # backward evaluation
         backward_hessian = backward
-
-        shifted[i] += np.pi/2
-        extra = qnode(shifted)*2
 
 
         hessian[i][i] = 0.5*(forward_hessian - extra + backward_hessian)
