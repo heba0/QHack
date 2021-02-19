@@ -2,8 +2,8 @@
 
 import sys
 import pennylane as qml
-# import numpy as np
-from pennylane import numpy as np
+import numpy as np
+
 
 def gradient_200(weights, dev):
     r"""This function must compute the gradient *and* the Hessian of the variational
@@ -23,7 +23,7 @@ def gradient_200(weights, dev):
             * hessian is a real NumPy array of size (5, 5).
     """
 
-    @qml.qnode(dev,interface=None)
+    @qml.qnode(dev, interface=None)
     def circuit(w):
         for i in range(3):
             qml.RX(w[i], wires=i)
@@ -42,19 +42,28 @@ def gradient_200(weights, dev):
 
         return qml.expval(qml.PauliZ(0) @ qml.PauliZ(2))
 
-    # gradient = np.zeros([5], dtype=np.float64)
-    # hessian = np.zeros([5, 5], dtype=np.float64)
+    gradient = np.zeros([5], dtype=np.float64)
+    hessian = np.zeros([5, 5], dtype=np.float64)
 
     # QHACK #
-
-
     def parameter_shift_term(qnode, params, i):
         shifted = params.copy()
         shifted[i] += np.pi/2
         forward = qnode(shifted)  # forward evaluation
 
+        forward_hessian = forward*2
+
         shifted[i] -= np.pi
         backward = qnode(shifted) # backward evaluation
+
+
+        shifted = params.copy()
+        shifted[i] = 0
+        backward_hessian = backward*2
+
+        hessian[i][i] =  0.25*(forward_hessian - backward_hessian)
+
+
 
         return 0.5 * (forward - backward)
 
@@ -66,29 +75,70 @@ def gradient_200(weights, dev):
 
         return gradients
 
+
+    def parameter_shift_term_hess(qnode, params, i, j):
+        
+        if i != j:
+            shifted = params.copy()
+            shifted[i] += np.pi/2
+            shifted[j] += np.pi/2
+            first = qnode(shifted)  # forward evaluation
+        
+            shifted = params.copy()
+            shifted[i] -= np.pi/2
+            shifted[j] += np.pi/2
+            second = qnode(shifted)  # forward evaluation
+
+            shifted = params.copy()
+            shifted[i] += np.pi/2
+            shifted[j] -= np.pi/2
+            third = qnode(shifted) # backward evaluation
+
+            shifted = params.copy()
+            shifted[i] -= np.pi/2
+            shifted[j] -= np.pi/2
+            fourth = qnode(shifted) # backward evaluation
+
+        # if i == j: 
+        #     shifted = params.copy()
+        #     shifted[i] += np.pi
+        #     first = qnode(shifted)*2
+
+        #     shifted = params.copy()
+        #     shifted[i] = 0
+        #     second = qnode(shifted)*2
+
+        #     third = 0
+        #     fourth = 0
+
+        return   0.25*(first - second - third + fourth)
+
+
+
+
     def calc_hessian(qnode, params):
-        hessian = np.zeros([5, 5], dtype=np.float64)
+        # hessian = np.zeros([5, 5], dtype=np.float64)
         print(params.shape)
+        counter = 0
         for i in range(5):
-            for j in range(5):
-                shifted_j = parameter_shift_term(qnode, params, j)
-                params1 = params
-                params1[j] = shifted_j
-                # print(params1)
-                shifted_i = parameter_shift_term(qnode, params1, i)
-                # print(shifted_i,".i.j.",shifted_j)
-                hessian[i][j] = shifted_i*shifted_j
+            for j in range(i+1):
+                if i != j:
+                    counter += 1
+                    hessian[i][j] = parameter_shift_term_hess(qnode, params, i, j)
+                    hessian[j][i] = hessian[i][j]
+
+        print(counter)
         return hessian
 
-
-    # QHACK #
 
 
     gradient = parameter_shift(circuit, weights)
     hessian = calc_hessian(circuit, weights)
-    print(weights)
-    print(gradient)
+   
+   # print(weights)
+   # print(gradient)
     print (hessian)
+    # QHACK #
 
     return gradient, hessian, circuit.diff_options["method"]
 
