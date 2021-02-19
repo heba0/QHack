@@ -43,7 +43,7 @@ def optimize_circuit(params):
 
         shifted[i] -= np.pi
         backward = qnode(shifted) # backward evaluation
-
+        
         return 0.5 * (forward - backward)
 
 
@@ -54,7 +54,7 @@ def optimize_circuit(params):
             gradients[i] = parameter_shift_term(qnode, params, i)
 
 
-    optimal_value = parameter_shift(circuit, hamiltonian)
+    optimal_value = np.sum(parameter_shift(circuit, hamiltonian))
     # QHACK #
 
     # Return the value of the minimized QNode
