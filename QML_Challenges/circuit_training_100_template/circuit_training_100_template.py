@@ -41,22 +41,19 @@ def optimize_circuit(params):
 
     print('hamiltonian..',hamiltonian)
 
-    def cost(var):
-        return 1-circuit(var)
+    # def cost(var):
+    #     return 1-circuit(var)
+    steps = 100
+    opt = qml.GradientDescentOptimizer(0.25)
+    qng_cost = []
+    theta = params
+    print(params)
+    for _ in range(steps):
+        theta = opt.step(circuit, theta)
 
+        # qng_cost.append(circuit(theta))
 
-    opt = qml.GradientDescentOptimizer(stepsize=0.05)
-    steps = 500
-
-    for i in range(steps):
-    # update the circuit parameters
-        params = opt.step(cost, params)
-
-        if (i + 1) % 10 == 0:
-            print("Cost after step {:5d}: {: .7f}".format(i + 1, cost(params)))
-
-    print(circuit(params))
-
+    print(circuit(theta))
     # QHACK #
 
     # Return the value of the minimized QNode
