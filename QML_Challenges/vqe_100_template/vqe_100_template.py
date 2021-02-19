@@ -67,18 +67,15 @@ def run_vqe(H):
     # QHACK #
 
     dev = qml.device('default.qubit', wires=num_qubits)
-    circuit = qml.QNode(variational_ansatz, dev)
 
-    cost_fn = qml.ExpvalCost(circuit, H, dev)
+    cost_fn = qml.ExpvalCost(variational_ansatz, H, dev)
 
-    opt = qml.GradientDescentOptimizer(stepsize=0.2)
+    opt = qml.GradientDescentOptimizer(stepsize=0.05)
 
-    #np.random.seed(0)
-
-    print(params)
+    np.random.seed(0)
     
     max_iterations = 200
-    conv_tol = 1e-04
+    conv_tol = 1e-06
 
 
     for n in range(max_iterations):
@@ -86,23 +83,8 @@ def run_vqe(H):
         energy = cost_fn(params)
         conv = np.abs(energy - prev_energy)
 
-        if n % 20 == 0:
-            print('Iteration = {:},  Energy = {:.8f} Ha'.format(n, energy))
-
         if conv <= conv_tol:
             break
-
-   # print('Final convergence parameter = {:.8f} Ha'.format(conv))
-    #print('Final value of the ground-state energy = {:.8f} Ha'.format(energy))
-    #print('Accuracy with respect to the FCI energy: {:.8f} Ha ({:.8f} kcal/mol)'.format(
-    #np.abs(energy - (-1.136189454088)), np.abs(energy - (-1.136189454088))*627.503
-    #    )
-    #)
-    #print('Final circuit parameters = \n', params)
-
-    # Create a quantum device, set up a cost funtion and optimizer, and run the VQE.
-    # (We recommend ~500 iterations to ensure convergence for this problem,
-    # or you can design your own convergence criteria)
 
     # QHACK #
 
