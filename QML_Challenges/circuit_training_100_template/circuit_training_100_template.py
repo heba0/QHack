@@ -30,13 +30,31 @@ def optimize_circuit(params):
     # QHACK #
 
     # Initialize the device
-    # dev = ...
+    dev = qml.device('default.qubit', wires=WIRES)
 
     # Instantiate the QNode
-    # circuit = qml.QNode(variational_circuit, dev)
+    circuit = qml.QNode(variational_circuit, dev)
 
     # Minimize the circuit
+    def parameter_shift_term(qnode, params, i):
+        shifted = params.copy()
+        shifted[i] += np.pi/2
+        forward = qnode(shifted)  # forward evaluation
 
+        shifted[i] -= np.pi
+        backward = qnode(shifted) # backward evaluation
+
+        return 0.5 * (forward - backward)
+
+
+    def parameter_shift(qnode, params):
+        gradients = np.zeros([len(params)])
+
+        for i in range(len(params)):
+            gradients[i] = parameter_shift_term(qnode, params, i)
+
+
+    optimal_value = parameter_shift(circuit, hamiltonian)
     # QHACK #
 
     # Return the value of the minimized QNode
