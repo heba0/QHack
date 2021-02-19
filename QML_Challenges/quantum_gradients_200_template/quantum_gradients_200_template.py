@@ -10,16 +10,12 @@ def gradient_200(weights, dev):
     circuit using the parameter-shift rule, using exactly 51 device executions.
     The code you write for this challenge should be completely contained within
     this function between the # QHACK # comment markers.
-
     Args:
         weights (array): An array of floating-point numbers with size (5,).
         dev (Device): a PennyLane device for quantum circuit execution.
-
     Returns:
         tuple[array, array]: This function returns a tuple (gradient, hessian).
-
             * gradient is a real NumPy array of size (5,).
-
             * hessian is a real NumPy array of size (5, 5).
     """
 
@@ -51,19 +47,8 @@ def gradient_200(weights, dev):
         shifted[i] += np.pi/2
         forward = qnode(shifted)  # forward evaluation
 
-        forward_hessian = forward*2
-
         shifted[i] -= np.pi
         backward = qnode(shifted) # backward evaluation
-
-
-        shifted = params.copy()
-        shifted[i] = 0
-        backward_hessian = backward*2
-
-        hessian[i][i] =  0.25*(forward_hessian - backward_hessian)
-
-
 
         return 0.5 * (forward - backward)
 
@@ -99,17 +84,15 @@ def gradient_200(weights, dev):
             shifted[j] -= np.pi/2
             fourth = qnode(shifted) # backward evaluation
 
-        # if i == j: 
-        #     shifted = params.copy()
-        #     shifted[i] += np.pi
-        #     first = qnode(shifted)*2
+        if i == j: 
+            shifted = params.copy()
+            shifted[i] += np.pi
+            first = qnode(shifted)
 
-        #     shifted = params.copy()
-        #     shifted[i] = 0
-        #     second = qnode(shifted)*2
+            shifted[i] -= np.pi
+            second = qnode(shifted)
 
-        #     third = 0
-        #     fourth = 0
+            return 0.5*(first-second)
 
         return   0.25*(first - second - third + fourth)
 
@@ -117,17 +100,12 @@ def gradient_200(weights, dev):
 
 
     def calc_hessian(qnode, params):
-        # hessian = np.zeros([5, 5], dtype=np.float64)
+        hessian = np.zeros([5, 5], dtype=np.float64)
         print(params.shape)
-        counter = 0
         for i in range(5):
             for j in range(i+1):
-                if i != j:
-                    counter += 1
-                    hessian[i][j] = parameter_shift_term_hess(qnode, params, i, j)
-                    hessian[j][i] = hessian[i][j]
-
-        print(counter)
+                hessian[i][j] = parameter_shift_term_hess(qnode, params, i, j)
+                hessian[j][i] = hessian[i][j]
         return hessian
 
 
