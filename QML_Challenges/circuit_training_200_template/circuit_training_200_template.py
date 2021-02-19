@@ -4,7 +4,7 @@ import sys
 import networkx as nx
 import numpy as np
 import pennylane as qml
-
+from pennylane import qaoa
 
 # DO NOT MODIFY any of these parameters
 NODES = 6
@@ -31,6 +31,27 @@ def find_max_independent_set(graph, params):
     max_ind_set = []
 
     # QHACK #
+    wires = range(NODES)
+    dev = qml.device('default.qubit', wires=NODES)
+
+    cost_h, mixer_h = qaoa.cost.max_independent_set(graph,constrained=True)
+
+    # Defines a layer of the QAOA ansatz from the cost and mixer Hamiltonians
+    def qaoa_layer(gamma, alpha):
+        qaoa.cost_layer(gamma, cost_h)
+        qaoa.mixer_layer(alpha, mixer_h)
+
+    # Repeatedly applies layers of the QAOA ansatz
+    def circuit(params, **kwargs):
+
+        # for w in wires:
+        #     qml.Hadamard(wires=w)
+
+        qml.layer(qaoa_layer, N_LAYERS, params[0],params[1])
+
+    # print(circuit.draw())
+    cost_function = qml.ExpvalCost(circuit, cost_h, dev)
+    print(cost_function(params))
 
     # QHACK #
 

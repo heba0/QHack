@@ -10,12 +10,16 @@ def gradient_200(weights, dev):
     circuit using the parameter-shift rule, using exactly 51 device executions.
     The code you write for this challenge should be completely contained within
     this function between the # QHACK # comment markers.
+
     Args:
         weights (array): An array of floating-point numbers with size (5,).
         dev (Device): a PennyLane device for quantum circuit execution.
+
     Returns:
         tuple[array, array]: This function returns a tuple (gradient, hessian).
+
             * gradient is a real NumPy array of size (5,).
+
             * hessian is a real NumPy array of size (5, 5).
     """
 
@@ -42,15 +46,34 @@ def gradient_200(weights, dev):
     hessian = np.zeros([5, 5], dtype=np.float64)
 
     # QHACK #
+    extra = circuit(weights)*2
     def parameter_shift_term(qnode, params, i):
         shifted = params.copy()
         shifted[i] += np.pi/2
         forward = qnode(shifted)  # forward evaluation
+        forward_hessian = forward
 
-        shifted[i] -= np.pi
+
+        shifted = params.copy()
+        shifted[i] -= np.pi/2
         backward = qnode(shifted) # backward evaluation
+        backward_hessian = backward
+
+
+        hessian[i][i] = 0.5*(forward_hessian - extra + backward_hessian)
+
+       # if i == j: 
+       #     shifted = params.copy()
+       #     shifted[i] += np.pi
+       #     first = qnode(shifted)
+
+       #     shifted[i] -= np.pi
+       #     second = qnode(shifted)
+
 
         return 0.5 * (forward - backward)
+
+
 
     def parameter_shift(qnode, params):
         gradients = np.zeros([len(params)])
@@ -84,15 +107,15 @@ def gradient_200(weights, dev):
             shifted[j] -= np.pi/2
             fourth = qnode(shifted) # backward evaluation
 
-        if i == j: 
-            shifted = params.copy()
-            shifted[i] += np.pi
-            first = qnode(shifted)
+        #if i == j: 
+         #   shifted = params.copy()
+         #   shifted[i] += np.pi
+          #  first = qnode(shifted)
 
-            shifted[i] -= np.pi
-            second = qnode(shifted)
+          #  shifted[i] -= np.pi
+          #  second = qnode(shifted)
 
-            return 0.5*(first-second)
+        # return 0.5*(first-second)
 
         return   0.25*(first - second - third + fourth)
 
@@ -100,10 +123,9 @@ def gradient_200(weights, dev):
 
 
     def calc_hessian(qnode, params):
-        hessian = np.zeros([5, 5], dtype=np.float64)
-        print(params.shape)
+        # print(params.shape)
         for i in range(5):
-            for j in range(i+1):
+            for j in range(i):
                 hessian[i][j] = parameter_shift_term_hess(qnode, params, i, j)
                 hessian[j][i] = hessian[i][j]
         return hessian
@@ -115,7 +137,7 @@ def gradient_200(weights, dev):
    
    # print(weights)
    # print(gradient)
-    print (hessian)
+    # print (hessian)
     # QHACK #
 
     return gradient, hessian, circuit.diff_options["method"]
