@@ -50,21 +50,21 @@ def gradient_200(weights, dev):
 
     def parameter_shift_term(qnode, params, i):
         shifted = params.copy()
-        shifted[i] += np.pi
+        shifted[i] += np.pi/2
         forward = qnode(shifted)  # forward evaluation
         forward_hessian = forward
 
 
-       # shifted = params.copy()
-        shifted[i] -= np.pi
+        shifted = params.copy()
+        shifted[i] -= np.pi/2
         backward = qnode(shifted) # backward evaluation
         backward_hessian = backward
 
-       # shifted[i] += np.pi/2
-       # extra = qnode(shifted)*2
+        shifted[i] += np.pi/2
+        extra = qnode(shifted)*2
 
 
-        hessian[i][i] = 0.5*(forward_hessian - backward_hessian)
+        hessian[i][i] = 0.5*(forward_hessian - extra + backward_hessian)
 
        # if i == j: 
        #     shifted = params.copy()
