@@ -66,25 +66,39 @@ def gradient_200(weights, dev):
 
 
     def parameter_shift_term_hess(qnode, params, i, j):
-        shifted = params.copy()
-        shifted[i] += np.pi/2
-        shifted[j] += np.pi/2
-        first = qnode(shifted)  # forward evaluation
         
-        shifted = params.copy()
-        shifted[i] -= np.pi/2
-        shifted[j] += np.pi/2
-        second = qnode(shifted)  # forward evaluation
+        if i != j:
+            shifted = params.copy()
+            shifted[i] += np.pi/2
+            shifted[j] += np.pi/2
+            first = qnode(shifted)  # forward evaluation
+        
+            shifted = params.copy()
+            shifted[i] -= np.pi/2
+            shifted[j] += np.pi/2
+            second = qnode(shifted)  # forward evaluation
 
-        shifted = params.copy()
-        shifted[i] += np.pi/2
-        shifted[j] -= np.pi/2
-        third = qnode(shifted) # backward evaluation
+            shifted = params.copy()
+            shifted[i] += np.pi/2
+            shifted[j] -= np.pi/2
+            third = qnode(shifted) # backward evaluation
 
-        shifted = params.copy()
-        shifted[i] -= np.pi/2
-        shifted[j] -= np.pi/2
-        fourth = qnode(shifted) # backward evaluation
+            shifted = params.copy()
+            shifted[i] -= np.pi/2
+            shifted[j] -= np.pi/2
+            fourth = qnode(shifted) # backward evaluation
+
+        if i == j: 
+            shifted = params.copy()
+            shifted[i] += np.pi
+            first = qnode(shifted)*2
+
+            shifted = params.copy()
+            shifted[i] = 0
+            second = qnode(shifted)*2
+
+            third = 0
+            fourth = 0
 
         return   0.25*(first - second - third + fourth)
 
@@ -95,8 +109,9 @@ def gradient_200(weights, dev):
         hessian = np.zeros([5, 5], dtype=np.float64)
         print(params.shape)
         for i in range(5):
-            for j in range(5):
+            for j in range(i+1):
                 hessian[i][j] = parameter_shift_term_hess(qnode, params, i, j)
+                hessian[j][i] = hessian[i][j]
         return hessian
 
 
