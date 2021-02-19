@@ -32,10 +32,84 @@ def natural_gradient(params):
     natural_grad = np.zeros(6)
 
     # QHACK #
+    
 
+    def parameter_shift_term(qnode, params, i):
+        shifted = params.copy()
+        shifted[i] += np.pi/2
+
+        forward = qnode(shifted)  # forward evaluation
+
+        shifted[i] -= np.pi
+
+        backward = qnode(shifted) # backward evaluation
+
+        return 0.5 * (forward - backward)
+
+
+
+    def parameter_shift(qnode, params):
+        gradients = np.zeros([len(params)])
+
+        for i in range(len(params)):
+            gradients[i] = parameter_shift_term(qnode, params, i)
+
+        return gradients
+
+
+    def Fubini_elem(qnode, params, i,j):
+
+        #elem 1
+        shifted = params.copy()
+        shifted[i] += np.pi/2
+        shifted[j] += np.pi/2
+        ket = qnode(shifted)  # forward evaluation
+        bra = qnode(params)
+        inner_prod_sq1 =  (bra * ket.T)**2
+
+
+        #elem 2
+        shifted = params.copy()
+        shifted[i] += np.pi/2
+        shifted[j] -= np.pi/2
+        ket = qnode(shifted)  # forward evaluation
+        bra = qnode(params)
+        inner_prod_sq2 =  (bra * ket.T)**2
+
+        #elem 3
+        shifted = params.copy()
+        shifted[i] -= np.pi/2
+        shifted[j] += np.pi/2
+        ket = qnode(shifted)  # forward evaluation
+        bra = qnode(params)
+        inner_prod_sq3 =  (bra * ket.T)**2
+
+        #elem 4
+        shifted = params.copy()
+        shifted[i] -= np.pi/2
+        shifted[j] -= np.pi/2
+        ket = qnode(shifted)  # forward evaluation
+        bra = qnode(params)
+        inner_prod_sq4 =  (bra * ket.T)**2
+
+        return 1/8 * (-inner_prod_sq1+inner_prod_sq2+inner_prod_sq3-inner_prod_sq4)
+    
+    
+    def calc_Fubini(qnode, params):
+        F = np.zeros([len(params), len(params)], dtype=np.float64)
+        for i in range(len(params)):
+            for j in range(len(params)):
+                F[i][j] = Fubini_elem(qnode, params, i,j)
+        return F
+
+
+    gradient = parameter_shift(qnode,params)
+    F = calc_Fubini(qnode,params)
+    F_inv = np.linalg.pinv(F)
+    # print(F_inv @ gradient)
     # QHACK #
 
-    return natural_grad
+    return F_inv @ gradient
 
 
 def non_parametrized_layer():
