@@ -145,7 +145,7 @@ def classify_data(X_train, Y_train, X_test):
         acc = accuracy(Y, predictions)
         flag  =False
         if not(it % 10):
-            # flag  =True
+            flag  =False
             # print(array_to_concatenated_string(predictions))
 
         print(
