@@ -34,8 +34,8 @@ def classify_data(X_train, Y_train, X_test):
     num_qubits = 3
     num_layers = 2
     batch_size = 5
-    steps = 5000
-    step_size = 0.01
+    steps = 162
+    step_size = 0.15
     dev = qml.device("default.qubit", wires=3)
     dev2 = qml.device("default.qubit", wires=3)
     def layer(W):
@@ -57,11 +57,12 @@ def classify_data(X_train, Y_train, X_test):
     def circuit(weights, x):
 
         # statepreparation(x)
+        AngleEmbedding (x , wires = range ( num_qubits ))
         # print(x)
         for W in weights:
             layer(W)
         # print(qml.expval(qml.PauliZ(0)))
-        # AngleEmbedding (x , wires = range ( num_qubits ))
+        
         # StronglyEntanglingLayers ( weights , wires = range ( num_qubits ))
         return qml.expval(qml.PauliZ(0))
 
@@ -86,7 +87,7 @@ def classify_data(X_train, Y_train, X_test):
         # print("variational_classifier:\n weights {}, bias {}, \n x {}".format(var[0],var[1], x ))
         weights = var[0]
         bias = var[1]
-        return node_caller(weights, x,flag) + bias
+        return circuit(weights, x) + bias
       
     def square_loss(labels, predictions):
         loss = 0
@@ -114,7 +115,7 @@ def classify_data(X_train, Y_train, X_test):
 
 
 
-    Y_train += 1
+    # Y_train += 1
     # print(Y_train)
     X,Y = X_train, Y_train
     np.random.seed(0)
@@ -141,21 +142,27 @@ def classify_data(X_train, Y_train, X_test):
         # var = opt2.step(lambda v: cost(v, X_batch, Y_batch), var)
 
         # Compute accuracy
-        predictions = [np.round(variational_classifier(var, x,flag)) for x in X]
-        acc = accuracy(Y, predictions)
+        predictions = [(variational_classifier(var, x,flag)) for x in X]
+        acc = accuracy(Y, np.round(predictions))
         flag  =False
         if not(it % 10):
             flag  =False
-            # print(array_to_concatenated_string(predictions))
+            print(array_to_concatenated_string(np.round(predictions)))
 
         print(
             "Iter: {:5d} | Cost: {:0.7f} | Accuracy: {:0.7f} ".format(
                 it + 1, cost(var, X, Y), acc
             )
         )
+    # X_test += 1
+    predictions = np.round([(variational_classifier(var, x,flag)) for x in X_test])
+    # predictions -= 1
+    labels_test = [1,0,-1,0,-1,1,-1,-1,0,-1,1,-1,0,1,0,-1,-1,0,0,1,1,0,-1,0,0,-1,0,-1,0,0,1,1,-1,-1,-1,0,-1,0,1,0,-1,1,1,0,-1,-1,-1,-1,0,0]
+    print("Prediction Accuracy : ",accuracy(labels_test,predictions))
+
     # QHACK #
 
-    return array_to_concatenated_string(predictions)
+    return array_to_concatenated_string(np.round(predictions))
 
 
 def array_to_concatenated_string(array):
