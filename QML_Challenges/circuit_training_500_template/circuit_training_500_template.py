@@ -142,23 +142,23 @@ def classify_data(X_train, Y_train, X_test):
         # var = opt2.step(lambda v: cost(v, X_batch, Y_batch), var)
 
         # Compute accuracy
-        predictions = [(variational_classifier(var, x,flag)) for x in X]
-        acc = accuracy(Y, np.round(predictions))
-        flag  =False
-        if not(it % 10):
-            flag  =False
-            print(array_to_concatenated_string(np.round(predictions)))
+        # predictions = [(variational_classifier(var, x,flag)) for x in X]
+        # acc = accuracy(Y, np.round(predictions))
+        # flag  =False
+        # if not(it % 10):
+        #     flag  =False
+        #     print(array_to_concatenated_string(np.round(predictions)))
 
-        print(
-            "Iter: {:5d} | Cost: {:0.7f} | Accuracy: {:0.7f} ".format(
-                it + 1, cost(var, X, Y), acc
-            )
-        )
+        # print(
+        #     "Iter: {:5d} | Cost: {:0.7f} | Accuracy: {:0.7f} ".format(
+        #         it + 1, cost(var, X, Y), acc
+        #     )
+        # )
     # X_test += 1
     predictions = np.round([(variational_classifier(var, x,flag)) for x in X_test])
     # predictions -= 1
     labels_test = [1,0,-1,0,-1,1,-1,-1,0,-1,1,-1,0,1,0,-1,-1,0,0,1,1,0,-1,0,0,-1,0,-1,0,0,1,1,-1,-1,-1,0,-1,0,1,0,-1,1,1,0,-1,-1,-1,-1,0,0]
-    print("Prediction Accuracy : ",accuracy(labels_test,predictions))
+    # print("Prediction Accuracy : ",accuracy(labels_test,predictions))
 
     # QHACK #
 
