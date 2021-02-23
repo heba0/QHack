@@ -162,7 +162,7 @@ def classify_data(X_train, Y_train, X_test):
 
     # QHACK #
 
-    return array_to_concatenated_string(np.round(predictions))
+    return array_to_concatenated_string((np.round(predictions)).astype(int))
 
 
 def array_to_concatenated_string(array):
