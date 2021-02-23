@@ -31,8 +31,8 @@ def find_max_independent_set(graph, params):
     max_ind_set = []
 
     # QHACK #
-    wires = range(NODES)
-    dev = qml.device('default.qubit', wires=NODES)
+    wires =range(NODES)
+    dev = qml.device("qulacs.simulator", wires=wires)
 
     cost_h, mixer_h = qaoa.cost.max_independent_set(graph,constrained=True)
 
@@ -44,24 +44,26 @@ def find_max_independent_set(graph, params):
     # Repeatedly applies layers of the QAOA ansatz
     def circuit(params, **kwargs):
 
-        # for w in wires:
-        #     qml.Hadamard(wires=w)
-
         qml.layer(qaoa_layer, N_LAYERS, params[0],params[1])
 
-    # print(circuit.draw())
 
     @qml.qnode(dev)
     def probability_circuit(gamma, alpha):
         circuit([gamma, alpha])
         return qml.probs(wires=wires)
+     
 
+    probs = probability_circuit(params[0],params[1])
 
-    probs = probability_circuit(params[0], params[1])
+    max_indx = probs.argmax(axis=0)
+    get_bin = lambda x, n: format(x, 'b').zfill(n)
+    fin_state = get_bin(max_indx,NODES)
+    # print(type(fin_state)) 
 
-    print(probs)
-    # cost_function =  qml.ExpvalCost(circuit, cost_h, dev)
-    # print(cost_function(params))
+    for i in range(len(fin_state)):
+        if fin_state[i] == '1':
+            max_ind_set.append(i) 
+
 
     # QHACK #
 
