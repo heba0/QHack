@@ -32,7 +32,7 @@ def find_max_independent_set(graph, params):
 
     # QHACK #
     wires =range(NODES)
-    dev = qml.device("qulacs.simulator", wires=wires)
+    dev = qml.device("default.qubit", wires=wires)
 
     cost_h, mixer_h = qaoa.cost.max_independent_set(graph,constrained=True)
 
