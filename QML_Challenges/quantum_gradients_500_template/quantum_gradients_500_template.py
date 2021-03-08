@@ -7,7 +7,7 @@ from pennylane import numpy as np
 a = 0.7
 b = -0.3
 dev = qml.device("default.qubit", wires=3)
-
+dev2 = qml.device("default.qubit", wires=3)
 
 def natural_gradient(params):
     """Calculate the natural gradient of the qnode() cost function.
@@ -32,10 +32,84 @@ def natural_gradient(params):
     natural_grad = np.zeros(6)
 
     # QHACK #
+    
 
+    def parameter_shift_term(qnode, params, i):
+        shifted = params.copy()
+        shifted[i] += np.pi/2
+
+        forward = qnode(shifted)  # forward evaluation
+
+        shifted[i] -= np.pi
+
+        backward = qnode(shifted) # backward evaluation
+
+        return 0.5 * (forward - backward)
+
+
+
+    def parameter_shift(qnode, params):
+        gradients = np.zeros([len(params)])
+
+        for i in range(len(params)):
+            gradients[i] = parameter_shift_term(qnode, params, i)
+
+        return gradients
+
+
+    def Fubini_elem(qnode2, params, i,j):
+
+        # print(dev._state)
+
+        #elem 1
+        shifted = params.copy()
+        shifted[i] += np.pi/2
+        shifted[j] += np.pi/2
+        ket = qnode2(shifted)  # forward evaluation
+        bra = qnode2(params)
+        inner_prod_sq1 =  np.abs(bra.T @ np.conjugate(ket))**2
+
+        #elem 2
+        shifted = params.copy()
+        shifted[i] += np.pi/2
+        shifted[j] -= np.pi/2
+        ket = qnode2(shifted)  # forward evaluation
+        inner_prod_sq2 =  np.abs(bra.T @ np.conjugate(ket))**2
+
+        #elem 3
+        shifted = params.copy()
+        shifted[i] -= np.pi/2
+        shifted[j] += np.pi/2
+        ket = qnode2(shifted)  # forward evaluation
+        inner_prod_sq3 =  np.abs(bra.T @ np.conjugate(ket))**2
+
+        #elem 4
+        shifted = params.copy()
+        shifted[i] -= np.pi/2
+        shifted[j] -= np.pi/2
+        ket = qnode2(shifted) # forward evaluation
+        inner_prod_sq4 =  np.abs(bra.T @ np.conjugate(ket))**2
+
+        return (1/8) * (-inner_prod_sq1+inner_prod_sq2+inner_prod_sq3-inner_prod_sq4)
+    
+    
+    def calc_Fubini(qnode2, params):
+        F = np.zeros([len(params), len(params)], dtype=np.float64)
+        for i in range(len(params)):
+            for j in range(len(params)):
+                F[i][j] = Fubini_elem(qnode2, params, i,j).real
+        return F
+
+
+    gradient = parameter_shift(qnode,params)
+    F = calc_Fubini(qnode2,params)
+    F_inv = np.linalg.pinv(F)
+
+    # met_fn = qml.metric_tensor(qnode2)
+    # print(met_fn(params))
     # QHACK #
 
-    return natural_grad
+    return F_inv @ gradient
 
 
 def non_parametrized_layer():
@@ -84,6 +158,16 @@ def qnode(params):
     """
     variational_circuit(params)
     return qml.expval(qml.PauliX(1))
+
+@qml.qnode(dev2)
+def qnode2(params):
+    """A PennyLane QNode that pairs the variational_circuit with an expectation value
+    measurement.
+
+    # DO NOT MODIFY anything in this function! It is used to judge your solution.
+    """
+    variational_circuit(params)
+    return qml.state()
 
 
 if __name__ == "__main__":

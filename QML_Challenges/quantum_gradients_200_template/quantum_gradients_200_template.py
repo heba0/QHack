@@ -46,7 +46,98 @@ def gradient_200(weights, dev):
     hessian = np.zeros([5, 5], dtype=np.float64)
 
     # QHACK #
+    extra = circuit(weights)*2
+    def parameter_shift_term(qnode, params, i):
+        shifted = params.copy()
+        shifted[i] += np.pi/2
+        forward = qnode(shifted)  # forward evaluation
+        forward_hessian = forward
 
+
+        shifted = params.copy()
+        shifted[i] -= np.pi/2
+        backward = qnode(shifted) # backward evaluation
+        backward_hessian = backward
+
+
+        hessian[i][i] = 0.5*(forward_hessian - extra + backward_hessian)
+
+       # if i == j: 
+       #     shifted = params.copy()
+       #     shifted[i] += np.pi
+       #     first = qnode(shifted)
+
+       #     shifted[i] -= np.pi
+       #     second = qnode(shifted)
+
+
+        return 0.5 * (forward - backward)
+
+
+
+    def parameter_shift(qnode, params):
+        gradients = np.zeros([len(params)])
+
+        for i in range(len(params)):
+            gradients[i] = parameter_shift_term(qnode, params, i)
+
+        return gradients
+
+
+    def parameter_shift_term_hess(qnode, params, i, j):
+        
+        if i != j:
+            shifted = params.copy()
+            shifted[i] += np.pi/2
+            shifted[j] += np.pi/2
+            first = qnode(shifted)  # forward evaluation
+        
+            shifted = params.copy()
+            shifted[i] -= np.pi/2
+            shifted[j] += np.pi/2
+            second = qnode(shifted)  # forward evaluation
+
+            shifted = params.copy()
+            shifted[i] += np.pi/2
+            shifted[j] -= np.pi/2
+            third = qnode(shifted) # backward evaluation
+
+            shifted = params.copy()
+            shifted[i] -= np.pi/2
+            shifted[j] -= np.pi/2
+            fourth = qnode(shifted) # backward evaluation
+
+        #if i == j: 
+         #   shifted = params.copy()
+         #   shifted[i] += np.pi
+          #  first = qnode(shifted)
+
+          #  shifted[i] -= np.pi
+          #  second = qnode(shifted)
+
+        # return 0.5*(first-second)
+
+        return   0.25*(first - second - third + fourth)
+
+
+
+
+    def calc_hessian(qnode, params):
+        # print(params.shape)
+        for i in range(5):
+            for j in range(i):
+                hessian[i][j] = parameter_shift_term_hess(qnode, params, i, j)
+                hessian[j][i] = hessian[i][j]
+        return hessian
+
+
+
+    gradient = parameter_shift(circuit, weights)
+    hessian = calc_hessian(circuit, weights)
+   
+   # print(weights)
+   # print(gradient)
+    # print (hessian)
     # QHACK #
 
     return gradient, hessian, circuit.diff_options["method"]

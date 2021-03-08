@@ -22,7 +22,7 @@ def parameter_shift(weights):
     """
     dev = qml.device("default.qubit", wires=3)
 
-    @qml.qnode(dev)
+    @qml.qnode(dev,diff_method="parameter-shift")
     def circuit(weights):
         for i in range(len(weights)):
             qml.RX(weights[i, 0], wires=0)
@@ -35,12 +35,28 @@ def parameter_shift(weights):
 
         return qml.expval(qml.PauliY(0) @ qml.PauliZ(2))
 
-    gradient = np.zeros_like(weights)
+    # gradient = np.zeros_like(weights)
 
     # QHACK #
-    #
-    # QHACK #
+    def parameter_shift_term(qnode, params, i,j):
+        shifted = params.copy()
+        shifted[i][j] += np.pi/2
+        forward = qnode(shifted)  # forward evaluation
+        shifted[i][j] -= np.pi
+        backward = qnode(shifted) # backward evaluation
+        return 0.5*(forward - backward)
 
+    def parameter_shift(qnode, params):
+        gradients = np.zeros_like(weights)
+        for i in range(params.shape[0]):
+            for j in range(params.shape[1]):                
+                gradients[i][j] = parameter_shift_term(qnode, params, i,j)
+
+        return gradients
+
+
+    gradient = parameter_shift(circuit, weights)
+    # QHACK #
     return gradient
 
 
